@@ -48,8 +48,13 @@ class RouterWANSpeedSensor(GeneralRouterSensor):
 class NetworkClientSpeedSensor(BaseKeeneticNetworkClientEntity, SensorEntity):
     """Network client sensor."""
     def _get_attributes_data(self) -> dict:
-        if data := self.router.get_network_clients_data():
-            return data.get(self.client_id, {})
+        if all_data := self.router.get_network_clients_data():
+            client_data = all_data.get(self.client_id, {})
+            client_data.update({
+                "_client_rx_speed": "client_rx_speed",
+                "_client_tx_speed": "client_tx_speed"
+            })
+            return client_data
         return {}
 
 
@@ -82,8 +87,8 @@ ROUTER_SENSORS: tuple[RouterSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         update_coordinator = UPDATE_COORDINATOR_SYS_STATS,
-        extra_attributes = {"Memory free": "memfree",
-                            "Memory total": "memtotal"}
+        extra_attributes = {"memory_free": "memfree",
+                            "memory_total": "memtotal"}
     ),
     RouterSensorDescription(
         key="uptime",
@@ -128,8 +133,11 @@ NETWORK_CLIENT_SENSORS: tuple[NetworkClientSensorDescription, ...] = (
         suggested_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         suggested_display_precision=0,
         update_coordinator=UPDATE_COORDINATOR_CLIENTS_RX_SPEED,
-        extra_attributes = {"Interface ID": {"interface": "id"},
-                            "Interface name": {"interface": "name"}},
+        extra_attributes = {"sensor_type": "_client_rx_speed",
+                            "mac": "mac",
+                            "ip": "ip",
+                            "interface_id": {"interface": "id"},
+                            "interface_name": {"interface": "name"}},
         entity_class=NetworkClientSpeedSensor
     ),
     NetworkClientSensorDescription(
@@ -141,8 +149,11 @@ NETWORK_CLIENT_SENSORS: tuple[NetworkClientSensorDescription, ...] = (
         suggested_unit_of_measurement=UnitOfDataRate.KILOBITS_PER_SECOND,
         suggested_display_precision=0,
         update_coordinator=UPDATE_COORDINATOR_CLIENTS_TX_SPEED,
-        extra_attributes = {"Interface ID": {"interface": "id"},
-                            "Interface name": {"interface": "name"}},
+        extra_attributes = {"sensor_type": "_client_tx_speed",
+                            "mac": "mac",
+                            "ip": "ip",
+                            "interface_id": {"interface": "id"},
+                            "interface_name": {"interface": "name"}},
         entity_class=NetworkClientSpeedSensor
     )
 )
